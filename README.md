@@ -1,7 +1,5 @@
-SOTA mean "smart open traffic agent"
-
 # 项目介绍
-sota-mesh是一个基于golang实现的轻量的service mesh数据面，参考了envoy和mosn的部分实现，旨在作为istio的数据面存在，同时能够根据自己业务做定制化开发。
+SOTA means "smart open traffic agent"，sota-mesh是一个基于golang实现的轻量的service mesh数据面，参考了envoy和mosn的部分实现，旨在作为istio的数据面存在，同时能够根据自己业务做定制化开发。
 
 # 快速体验
 ## build
@@ -70,7 +68,7 @@ func (s *SimpleDispatcher) serve() {
 ```
 
 ### zeromq协议
-zeromq的协议采用zmtp，由于我们用到的是zeromq 3.2，对应zmtp2.0，对于zeromq线上golang一般会采用cgo的方式去调用第三方库(比如github.com/pebbe/zmq3)的实现，这里为了验证，采用了纯golang的实现，协议解析部分参考了https://github.com/prepor/go-zmtp，dispatch的代码参考如下，可以看到实际代码也很简单：
+zeromq的协议采用zmtp，由于我们用到的是zeromq 3.2，对应zmtp2.0，对于zeromq线上golang一般会采用cgo的方式去调用第三方库(比如github.com/pebbe/zmq3)的实现，这里为了验证，采用了纯golang的实现，协议解析部分参考了https://github.com/prepor/go-zmtp, dispatch的代码参考如下，可以看到实际代码也很简单：
 ```
 type ZmqDispatcher struct {
 	*dispatch.DispatcherImpl
