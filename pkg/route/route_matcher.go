@@ -6,6 +6,7 @@ import (
 	"github.com/fanyang01/radix"
 	"github.com/wereliang/sota-mesh/pkg/api"
 	"github.com/wereliang/sota-mesh/pkg/config"
+	"github.com/wereliang/sota-mesh/pkg/log"
 )
 
 // https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto
@@ -27,6 +28,7 @@ func NewRouterMatcher(c config.RouteConfiguration) api.RouteConfigMatcher {
 }
 
 func (r *RouteConfigMatcherImpl) build() {
+
 	for _, vhConfig := range r.config.GetVirtualHosts() {
 		match := newPathTrie(vhConfig.GetName())
 		for _, route := range vhConfig.GetRoutes() {
@@ -34,6 +36,12 @@ func (r *RouteConfigMatcherImpl) build() {
 			if cluster == "" {
 				panic("invalid route action(just support cluster)")
 			}
+
+			if route.GetMatch() == nil {
+				log.Error("virtual_hosts:%s config empty match", vhConfig.GetName())
+				continue
+			}
+
 			if path := route.GetMatch().GetPath(); path != "" {
 				match.Path(path, cluster)
 			} else if prefix := route.GetMatch().GetPrefix(); prefix != "" {
@@ -42,6 +50,7 @@ func (r *RouteConfigMatcherImpl) build() {
 				panic(fmt.Sprintf("invalid match path:%#v", route))
 			}
 		}
+
 		for _, host := range vhConfig.GetDomains() {
 			r.domains.Add(host, match)
 		}
