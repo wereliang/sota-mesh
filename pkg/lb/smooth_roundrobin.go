@@ -22,6 +22,10 @@ func (lb *SmoothRoundRobin) Select(api.LoadBalancerContext) config.LbEndpoint {
 	lb.RLock()
 	defer lb.RUnlock()
 
+	if len(lb.items) == 0 {
+		return nil
+	}
+
 	maxIndex := 0
 	for i := 0; i < len(lb.items); i++ {
 		item := lb.items[i]
@@ -35,13 +39,21 @@ func (lb *SmoothRoundRobin) Select(api.LoadBalancerContext) config.LbEndpoint {
 	return lb.items[maxIndex].endpoint
 }
 
+func (lb *SmoothRoundRobin) Refresh(edps []config.LbEndpoint) {
+	lb.Lock()
+	defer lb.Unlock()
+	lb.total = 0
+	lb.items = nil
+	for _, e := range edps {
+		lb.total += int32(e.GetLoadBalancingWeight())
+		lb.items = append(lb.items, &rbItem{endpoint: e})
+	}
+}
+
 func init() {
 	registLoadBalancer(config.Round_Robin, func(edps config.LbEndpointSet) api.LoadBalancer {
 		rb := &SmoothRoundRobin{}
-		for _, e := range edps {
-			rb.total += int32(e.GetLoadBalancingWeight())
-			rb.items = append(rb.items, &rbItem{endpoint: e})
-		}
+		rb.Refresh(edps)
 		return rb
 	})
 }

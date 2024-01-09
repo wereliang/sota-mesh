@@ -2,6 +2,7 @@ package envoyv3
 
 import (
 	"net"
+	"time"
 
 	envoy_config_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -72,13 +73,14 @@ type LocalityLbEndpointsEnvoy struct {
 func (e *LocalityLbEndpointsEnvoy) GetLbEndpoint() []config.LbEndpoint {
 	var edps []config.LbEndpoint
 	for _, edp := range e.LocalityLbEndpoints.GetLbEndpoints() {
-		edps = append(edps, &LbEndpointEnvoy{edp})
+		edps = append(edps, &LbEndpointEnvoy{LbEndpoint: edp})
 	}
 	return edps
 }
 
 type LbEndpointEnvoy struct {
 	*envoy_config_endpoint_v3.LbEndpoint
+	Expired time.Time
 }
 
 func (e *LbEndpointEnvoy) GetEndpoint() config.Endpoint {
@@ -94,6 +96,14 @@ func (e *LbEndpointEnvoy) GetLoadBalancingWeight() int {
 
 func (e *LbEndpointEnvoy) SetLoadBalancingWeight(w int) {
 	e.LbEndpoint.LoadBalancingWeight = wrapperspb.UInt32(uint32(w))
+}
+
+func (e *LbEndpointEnvoy) GetExpired() time.Time {
+	return e.Expired
+}
+
+func (e *LbEndpointEnvoy) SetExpired(t time.Time) {
+	e.Expired = t
 }
 
 type EndpointEnvoy struct {

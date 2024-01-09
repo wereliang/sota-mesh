@@ -2,6 +2,7 @@ package httprouter
 
 import (
 	"net"
+	"time"
 
 	envoy_extensions_filters_http_router_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/wereliang/sota-mesh/pkg/dispatch/http"
 	"github.com/wereliang/sota-mesh/pkg/filter"
 	"github.com/wereliang/sota-mesh/pkg/log"
+	"github.com/wereliang/sota-mesh/pkg/qos"
 )
 
 func init() {
@@ -41,24 +43,10 @@ func (r *Router) Decode(ctx api.StreamContext) api.FilterStatus {
 		return api.Stop
 	}
 
-	snapShot := cluster.Snapshot()
-	if snapShot == nil {
-		log.Error("snapshot is nil for cluster(%s)", entry.GetClusterName())
-		return api.Stop
-	}
-
-	lb := snapShot.LoadBalancer()
-	if lb == nil {
-		log.Error("loadbalancer is nil. %s", entry.GetClusterName())
-		return api.Stop
-	}
-
-	endpoint := snapShot.LoadBalancer().Select(r.cb)
-	log.Debug("[Endpoint: %s]", "http://"+endpoint.GetEndpoint().GetAddress().String())
-
-	ctx.Request().SetHost(endpoint.GetEndpoint().GetAddress().String())
-
-	err := http.Call(ctx, r.getSourceAddr(cluster.Snapshot().ClusterInfo()))
+	_, err := qos.QosCall(cluster, r.cb, func(qosRes api.QosResult) (interface{}, error) {
+		ctx.Request().SetHost(qosRes.Endpoint.GetEndpoint().GetAddress().String())
+		return nil, http.CallTimeout(ctx, r.getSourceAddr(cluster.Snapshot().ClusterInfo()), time.Second*10)
+	})
 	if err != nil {
 		log.Error("http call error: %s", err)
 		return api.Stop

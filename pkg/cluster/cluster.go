@@ -7,8 +7,8 @@ import (
 
 	"github.com/wereliang/sota-mesh/pkg/api"
 	"github.com/wereliang/sota-mesh/pkg/config"
-	"github.com/wereliang/sota-mesh/pkg/lb"
 	"github.com/wereliang/sota-mesh/pkg/log"
+	"github.com/wereliang/sota-mesh/pkg/qos"
 )
 
 type ClusterCreator func(config.Cluster) (api.Cluster, error)
@@ -32,6 +32,7 @@ type SimpleCluster struct {
 	snapShot atomic.Value
 	info     config.Cluster
 	update   time.Time
+	qr       *qos.QosRouterImpl
 }
 
 func (c *SimpleCluster) Snapshot() api.ClusterSnapshot {
@@ -42,6 +43,10 @@ func (c *SimpleCluster) Snapshot() api.ClusterSnapshot {
 	return nil
 }
 
+func (c *SimpleCluster) GetQosRouter() api.QosRouter {
+	return c.qr
+}
+
 func (c *SimpleCluster) UpdateTime() time.Time {
 	return c.update
 }
@@ -50,14 +55,15 @@ func (c *SimpleCluster) Config() interface{} {
 	return c.info
 }
 
-func (c *SimpleCluster) UpdateEndpoints(edps []config.LbEndpoint) {
+func (c *SimpleCluster) UpdateEndpoints(edps config.LbEndpointSet) {
 	// 此处不对cluster info设置endpoints了，而是单独保存了一份，
 	// 一来是防止竞争，二来认为cluterinfo是静态的数据
 	snapShot := &ClusterSnapShotImpl{
 		clusterInfo: c.info,
-		lb:          lb.NewLoadBalancer(c.info.GetLbPolicy(), edps),
-		endPoints:   edps}
+		// lb:          lb.NewLoadBalancer(c.info.GetLbPolicy(), edps),
+		endPoints: edps}
 	c.snapShot.Store(snapShot)
+	c.qr.UpdateEndpoints(edps)
 }
 
 func (c *SimpleCluster) getConfigEndpoints() (config.LbEndpointSet, error) {
@@ -85,15 +91,18 @@ func newSimpleCluster(cluster config.Cluster) *SimpleCluster {
 	log.Debug("cluster:%s type:%d lb:%d", cluster.GetName(), clusterType, lbType)
 
 	cluster.SetLbPolicy(lbType)
-	return &SimpleCluster{info: cluster, update: time.Now()}
+	return &SimpleCluster{
+		info:   cluster,
+		update: time.Now(),
+		qr:     qos.NewQosRouter(nil, lbType, nil, nil)}
 }
 
 func (c *SimpleCluster) Close() {}
 
 type ClusterSnapShotImpl struct {
 	clusterInfo config.Cluster
-	lb          api.LoadBalancer
-	endPoints   config.LbEndpointSet
+	// lb          api.LoadBalancer
+	endPoints config.LbEndpointSet
 }
 
 func (cs *ClusterSnapShotImpl) ClusterInfo() config.Cluster {
@@ -104,6 +113,6 @@ func (cs *ClusterSnapShotImpl) EndpointSet() config.LbEndpointSet {
 	return cs.endPoints
 }
 
-func (cs *ClusterSnapShotImpl) LoadBalancer() api.LoadBalancer {
-	return cs.lb
-}
+// func (cs *ClusterSnapShotImpl) LoadBalancer() api.LoadBalancer {
+// 	return cs.lb
+// }

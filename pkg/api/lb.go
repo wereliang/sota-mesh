@@ -1,6 +1,8 @@
 package api
 
-import "github.com/wereliang/sota-mesh/pkg/config"
+import (
+	"github.com/wereliang/sota-mesh/pkg/config"
+)
 
 // LoadBalancerContext use for lb context
 type LoadBalancerContext interface {
@@ -11,4 +13,6 @@ type LoadBalancerContext interface {
 type LoadBalancer interface {
 	// Select return host by special algorithm
 	Select(LoadBalancerContext) config.LbEndpoint
+	// Update endpoints
+	Refresh([]config.LbEndpoint)
 }

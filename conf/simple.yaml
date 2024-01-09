@@ -29,7 +29,7 @@ static_resources:
               domains: ["*"]
               routes:
               - match:
-                  path: "/foo"
+                  path: "/sleep"
                 route:
                   cluster: aservice
               - match:
@@ -42,7 +42,7 @@ static_resources:
                   cluster: some_service
           # CustomFilter and the HTTP router filter are the HTTP filter chain.
           http_filters:
-          # - name: some.customer.filter
+          # - name: sota.filters.http.router
           - name: envoy.filters.http.router
             typed_config:
               "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router

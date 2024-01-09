@@ -64,7 +64,7 @@ func (s *httpStreamServer) handle(ctx api.StreamContext) error {
 }
 
 type StreamClient interface {
-	Call(api.StreamContext) error
+	Call(api.StreamContext, time.Duration) error
 }
 
 // 此处只区分了127.0.0.6的特殊情况
@@ -87,11 +87,11 @@ type fasthttpStreamClient struct {
 	client fasthttp.Client
 }
 
-func (sc *fasthttpStreamClient) Call(ctx api.StreamContext) error {
+func (sc *fasthttpStreamClient) Call(ctx api.StreamContext, t time.Duration) error {
 	request := ctx.Request().Raw().(*fasthttp.Request)
 	response := ctx.Response().Raw().(*fasthttp.Response)
 	request.UseHostHeader = true
-	return sc.client.DoTimeout(request, response, time.Second*4)
+	return sc.client.DoTimeout(request, response, t)
 }
 
 var dialerWithLAddr = &fasthttp.TCPDialer{
@@ -105,8 +105,12 @@ var defaultStreamClient = NewStreamClient(nil)
 var streamClientWithLAddr = NewStreamClient(&net.TCPAddr{})
 
 func Call(ctx api.StreamContext, laddr net.Addr) error {
+	return CallTimeout(ctx, laddr, time.Second*5)
+}
+
+func CallTimeout(ctx api.StreamContext, laddr net.Addr, t time.Duration) error {
 	if laddr != nil {
-		return streamClientWithLAddr.Call(ctx)
+		return streamClientWithLAddr.Call(ctx, t)
 	}
-	return defaultStreamClient.Call(ctx)
+	return defaultStreamClient.Call(ctx, t)
 }

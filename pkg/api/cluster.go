@@ -6,7 +6,8 @@ import "github.com/wereliang/sota-mesh/pkg/config"
 type Cluster interface {
 	SotaObject
 	Snapshot() ClusterSnapshot
-	UpdateEndpoints([]config.LbEndpoint)
+	UpdateEndpoints(config.LbEndpointSet)
+	GetQosRouter() QosRouter
 	Close()
 }
 
@@ -14,7 +15,7 @@ type Cluster interface {
 type ClusterSnapshot interface {
 	EndpointSet() config.LbEndpointSet
 	ClusterInfo() config.Cluster
-	LoadBalancer() LoadBalancer
+	// LoadBalancer() LoadBalancer
 }
 
 // ClusterManager is a manager for cluster

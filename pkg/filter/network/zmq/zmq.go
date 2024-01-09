@@ -23,6 +23,8 @@ func newZmqFilter(pb interface{}, cb api.ConnectionCallbacks) api.ReadFilter {
 }
 
 func (z *ZmqFilter) OnData(buf *bytes.Buffer) api.FilterStatus {
+	log.Debug("ondata: %d", buf.Len())
+
 	if err := z.dispatcher.Dispatch(buf); err != nil {
 		log.Error("%s", err)
 		return api.Stop

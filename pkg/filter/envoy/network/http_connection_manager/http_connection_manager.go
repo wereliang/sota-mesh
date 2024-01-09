@@ -59,7 +59,11 @@ func newHttpConnectionManager(pb interface{}, cb api.ConnectionCallbacks, contex
 	handler := http.NewHandler(matcher, cb)
 
 	for _, f := range hcm.config.HttpFilters {
-		factory, pb := filter.GetHTTPFactory(&config.AnyTypeConfig{A: f.GetTypedConfig()}, f.Name)
+		var any config.TypeConfig
+		if f.GetTypedConfig() != nil {
+			any = &config.AnyTypeConfig{A: f.GetTypedConfig()}
+		}
+		factory, pb := filter.GetHTTPFactory(any, f.Name)
 		if factory == nil {
 			if filter.IsWellknowName(f.Name) {
 				panic(fmt.Errorf("not found factory:%s", f.Name))

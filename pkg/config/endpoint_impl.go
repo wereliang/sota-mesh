@@ -1,6 +1,9 @@
 package config
 
-import "net"
+import (
+	"net"
+	"time"
+)
 
 type LocalityLbEndpointsImpl struct {
 	LbEndpoints []*LbEndpointImpl `json:"lb_endpoints"`
@@ -17,6 +20,7 @@ func (e *LocalityLbEndpointsImpl) GetLbEndpoint() []LbEndpoint {
 type LbEndpointImpl struct {
 	Endpoint            *EndpointImpl `json:"endpoint"`
 	LoadBalancingWeight int           `json:"load_balancing_weight"`
+	Expired             time.Time
 }
 
 func (e *LbEndpointImpl) GetEndpoint() Endpoint {
@@ -29,6 +33,14 @@ func (e *LbEndpointImpl) GetLoadBalancingWeight() int {
 
 func (e *LbEndpointImpl) SetLoadBalancingWeight(w int) {
 	e.LoadBalancingWeight = w
+}
+
+func (e *LbEndpointImpl) GetExpired() time.Time {
+	return e.Expired
+}
+
+func (e *LbEndpointImpl) SetExpired(t time.Time) {
+	e.Expired = t
 }
 
 type EndpointImpl struct {
