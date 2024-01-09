@@ -124,6 +124,8 @@ func (dp *ZmqDispatcher) Serve() {
 
 ## 熔断器
 ### 熔断器的设计
+参考pkg/qos下的实现，文档待补充
+
 ### TODO：快速过载
 
 ## TODO
